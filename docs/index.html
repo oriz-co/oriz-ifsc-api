@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Oriz IFSC API — Indian bank IFSC code lookup</title>
+    <meta
+      name="description"
+      content="Free, public, monthly snapshot of the RBI IFSC master list. JSON endpoints + PWA-installable docs."
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0b5fff" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #111;
+        --bg: #fff;
+        --muted: #555;
+        --accent: #0b5fff;
+        --card: #f6f7fb;
+        --border: #e3e6ee;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #f1f3f8;
+          --bg: #0e1116;
+          --muted: #a8b0c0;
+          --accent: #6ea8ff;
+          --card: #161b22;
+          --border: #2a313c;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 4rem;
+      }
+      h1 {
+        margin: 0 0 0.25rem;
+        font-size: 1.85rem;
+      }
+      h2 {
+        margin: 2rem 0 0.5rem;
+        font-size: 1.2rem;
+      }
+      p.lede {
+        color: var(--muted);
+        margin: 0 0 1.5rem;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem 1.1rem;
+        margin: 0.75rem 0;
+      }
+      code,
+      pre {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.92em;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 0.75rem;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      input,
+      button {
+        font: inherit;
+        padding: 0.55rem 0.75rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--fg);
+      }
+      button {
+        background: var(--accent);
+        color: #fff;
+        border-color: transparent;
+        cursor: pointer;
+      }
+      .row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin: 0.75rem 0;
+      }
+      .row input {
+        flex: 1 1 200px;
+      }
+      a {
+        color: var(--accent);
+      }
+      footer {
+        margin-top: 3rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .result {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Oriz IFSC API</h1>
+      <p class="lede">
+        Free, public JSON snapshot of the Indian IFSC master list. Refreshed monthly. No auth, no
+        rate-limit, hosted on GitHub Pages.
+      </p>
+
+      <h2>Endpoints</h2>
+      <div class="card">
+        <p>
+          <strong>Latest snapshot:</strong>
+          <a href="/data/latest.json"><code>/data/latest.json</code></a>
+        </p>
+        <p>
+          <strong>Full IFSC index:</strong>
+          <a href="/data/ifsc.json"><code>/data/ifsc.json</code></a>
+        </p>
+      </div>
+
+      <h2>Playground</h2>
+      <div class="card">
+        <p>Enter a bank prefix (4 letters, e.g. <code>HDFC</code>, <code>SBIN</code>, <code>ICIC</code>):</p>
+        <div class="row">
+          <input id="q" placeholder="HDFC" autocomplete="off" />
+          <button id="go">Lookup</button>
+        </div>
+        <pre class="result" id="out">Awaiting query…</pre>
+      </div>
+
+      <h2>Schema</h2>
+      <pre>{
+  "source": "...",
+  "fetchedAt": "ISO-8601",
+  "count": 1234,
+  "bankCount": 50,
+  "banks": {
+    "HDFC": [ { "ifsc": "HDFC0000001", "branch": "..." } ],
+    ...
+  }
+}</pre>
+
+      <h2>Credits</h2>
+      <p>
+        IFSC data is sourced from the
+        <a href="https://github.com/razorpay/ifsc">Razorpay public IFSC repository</a>, which mirrors
+        the
+        <a href="https://www.rbi.org.in/Scripts/Bs_viewRTGS.aspx">RBI master list</a>. This service
+        is an independent, unaffiliated convenience layer.
+      </p>
+
+      <footer>
+        <p>
+          MIT licensed •
+          <a href="https://github.com/chirag127/oriz-ifsc-api">GitHub</a> • part of the
+          <a href="https://oriz.in">Oriz</a> family.
+        </p>
+      </footer>
+    </main>
+
+    <script>
+      const out = document.getElementById("out");
+      const q = document.getElementById("q");
+      let cache = null;
+      async function load() {
+        if (cache) return cache;
+        const r = await fetch("/data/latest.json");
+        cache = await r.json();
+        return cache;
+      }
+      async function lookup() {
+        const key = (q.value || "").trim().toUpperCase();
+        if (!key) {
+          out.textContent = "Enter a bank prefix.";
+          return;
+        }
+        out.textContent = "Loading…";
+        try {
+          const data = await load();
+          const hit = data.banks[key];
+          if (!hit) {
+            const keys = Object.keys(data.banks).slice(0, 10).join(", ");
+            out.textContent = `No match for ${key}.\nTry one of: ${keys}…`;
+            return;
+          }
+          out.textContent = JSON.stringify({ bank: key, branches: hit }, null, 2);
+        } catch (e) {
+          out.textContent = "Error: " + e.message;
+        }
+      }
+      document.getElementById("go").addEventListener("click", lookup);
+      q.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") lookup();
+      });
+      if ("serviceWorker" in navigator) {
+        // No SW shipped in v0 — manifest alone is enough for "Install app" on Chrome/Edge.
+      }
+    </script>
+  </body>
+</html>

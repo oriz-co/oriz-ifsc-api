@@ -1,0 +1,13 @@
+name: distribute
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+# Placeholder: PWABuilder distribution will be wired in when a tagged release is cut.
+# See https://docs.pwabuilder.com/ — this job is a stub.
+jobs:
+  pwabuilder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "PWABuilder distribution placeholder — to be implemented."

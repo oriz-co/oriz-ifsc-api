@@ -1,0 +1,17 @@
+{
+  "name": "oriz-ifsc-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Indian IFSC code lookup — monthly snapshot of RBI master list. PWA-installable docs.",
+  "license": "MIT",
+  "author": "Chirag Singhal",
+  "homepage": "https://ifsc.api.oriz.in",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chirag127/oriz-ifsc-api.git"
+  },
+  "scripts": {
+    "scrape": "node scripts/scrape.mjs"
+  }
+}
